@@ -1,0 +1,28 @@
+server:
+  port: 18888
+spring:
+  application:
+    name: datakeeper-gateway-server # 应用名称
+  cloud:
+    gateway:
+      # 路由规则
+      routes:
+        - id: data-masking-service           # 路由 ID，唯一
+          uri: http://192.168.1.128:8090/   # 目标 URI，路由到微服务的地址
+          predicates:                   # 断言（判断条件）
+            - Path=/**         # 匹配对应 URL 的请求，将匹配到的请求追加在目标 URI 之后
+        - id: rewriteResponseBody
+          order: -1
+          uri: http://192.168.1.128:8090/
+          filters:
+            - name: ModifyResponseBody
+              args:
+                inClass: '#{T(String)}'
+                outClass: '#{T(String)}'
+                rewriteFunction: '#{@HandleWriteHttpResponse}'
+          predicates:
+            - Path=/api/**
+logging:
+  level:
+    org.springframework.cloud.gateway: DEBUG
+    reactor.netty.http.client: DEBUG
